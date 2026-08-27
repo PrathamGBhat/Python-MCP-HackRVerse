@@ -50,5 +50,10 @@ def chat(request: Request, response: Response, chat_request: ChatRequest):
 def health():
     return {"status": "ok"}
 
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+static_dir = os.path.join(BASE_DIR, "static")
+
 # Serve frontend (/static directory) at "/"
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
