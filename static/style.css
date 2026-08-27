@@ -1,0 +1,448 @@
+:root {
+  --bg: #0a0d14;
+  --surface: #111724;
+  --surface-raised: #182235;
+  --surface-overlay: #1f2b42;
+  --border: #26334d;
+  --border-subtle: #1c273c;
+  --text: #f1f5f9;
+  --text-muted: #8b9bb4;
+  --py-blue: #387eb8;
+  --py-blue-light: #60a5fa;
+  --py-gold: #facc15;
+  --py-gold-dim: #ca8a04;
+  --accent: #3b82f6;
+  --green: #10b981;
+  --red: #ef4444;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(56, 126, 184, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse at 80% 100%, rgba(250, 204, 21, 0.03) 0%, transparent 50%);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dot--live { animation: pulse 2s ease-in-out infinite; }
+  .prompt-glyph { animation: blink 1.2s ease-in-out infinite; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.console {
+  max-width: 760px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- Header ---------- */
+
+.console__header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-raised), var(--surface));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--py-blue-light);
+  background: rgba(56, 126, 184, 0.12);
+  border: 1px solid rgba(56, 126, 184, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+}
+
+.clear-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.clear-btn:hover {
+  background: var(--surface-raised);
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.header__main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.python-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.header__title {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.header__subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+/* Rules banner */
+
+.rules-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rule-icon {
+  font-weight: bold;
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.rule-item--allowed .rule-icon { color: var(--green); }
+.rule-item--forbidden .rule-icon { color: var(--red); }
+.rule-item strong { color: var(--text); }
+.rule-item code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: rgba(56, 126, 184, 0.15);
+  color: var(--py-blue-light);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ---------- Transcript ---------- */
+
+.console__body {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.msg {
+  max-width: 95%;
+  animation: rise 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.msg__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.msg__time {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.msg__content {
+  padding: 12px 16px;
+  border-radius: 10px;
+  line-height: 1.6;
+  font-size: 14.5px;
+}
+
+.msg__content p { margin: 0 0 10px; }
+.msg__content p:last-child { margin-bottom: 0; }
+
+.msg__content ul, .msg__content ol {
+  margin: 6px 0 10px;
+  padding-left: 20px;
+}
+
+.msg__content li { margin-bottom: 4px; }
+
+/* Code Block Formatting */
+
+.msg__content code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
+  color: var(--py-gold);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.code-wrapper {
+  position: relative;
+  margin: 10px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #0d121d;
+}
+
+.code-wrapper__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #151d2e;
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.code-wrapper__copy {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.code-wrapper__copy:hover {
+  color: var(--py-gold);
+  background: rgba(250, 204, 21, 0.1);
+}
+
+.msg__content pre {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  background: #0d121d;
+}
+
+.msg__content pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Message Variants */
+
+.msg--bot { align-self: flex-start; }
+.msg--bot .msg__label { color: var(--py-blue-light); }
+.msg--bot .msg__content {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-top-left-radius: 2px;
+}
+
+.msg--user { align-self: flex-end; }
+.msg--user .msg__header { justify-content: flex-end; }
+.msg--user .msg__label { color: var(--py-gold); }
+.msg--user .msg__content {
+  background: #1c2b42;
+  border: 1px solid #293d5c;
+  border-top-right-radius: 2px;
+  color: var(--text);
+}
+
+.msg--error .msg__label { color: var(--red); }
+.msg--error .msg__content {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+/* ---------- Status / typing ---------- */
+
+.console__status {
+  min-height: 22px;
+  padding: 0 24px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: opacity 0.15s ease;
+}
+
+.console__status.visible { color: var(--py-gold); }
+
+/* ---------- Input ---------- */
+
+.console__input {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 8px 6px 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.prompt-glyph {
+  font-family: var(--font-mono);
+  color: var(--py-blue-light);
+  font-weight: bold;
+  font-size: 15px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+#messageInput {
+  flex: 1;
+  resize: none;
+  max-height: 140px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  padding: 6px 0;
+  line-height: 1.4;
+}
+
+#messageInput:focus {
+  outline: none;
+}
+
+#sendBtn {
+  flex-shrink: 0;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 8px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+#sendBtn:hover:not(:disabled) { background: #2563eb; }
+#sendBtn:active:not(:disabled) { transform: scale(0.97); }
+
+#sendBtn:disabled {
+  background: var(--surface-overlay);
+  color: var(--text-muted);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 600px) {
+  .console { border-left: none; border-right: none; }
+  .console__header { padding: 16px; }
+  .console__body { padding: 16px; }
+  .console__input { padding: 12px 16px; }
+  .header__title { font-size: 18px; }
+}
+
