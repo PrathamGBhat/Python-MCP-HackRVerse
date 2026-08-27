@@ -8,14 +8,12 @@ It is equipped with strict system prompt guardrails to **refuse solving problem 
 
 ```
 .
-├── main.py           FastAPI app, POST /chat, rate limiting, serves static frontend
-├── llm.py             Groq LLM client & system prompt with CP guardrails
-├── .env.example       Template for environment variables (GROQ_API_KEY, etc.)
-├── requirements.txt   Python dependencies
-└── static/            Frontend assets
-    ├── index.html     Modern CP assistant UI with Markdown support
-    ├── style.css      Developer dark theme styling & code block formatting
-    └── script.js      Frontend logic, snippet copy buttons, history management
+├── main.py           FastAPI app, POST /chat, rate limiting, lifespan MCP management
+├── llm.py            Groq LLM client with MCP tool-calling loop & CP guardrails
+├── mcp_client.py     Async Stdio MCP client wrapper for mcp-server-fetch
+├── requirements.txt  Python dependencies (fastapi, groq, mcp-server-fetch, etc.)
+├── static/           Frontend assets (HTML, CSS, JS)
+└── tests/            Automated test suite (MCP fetch, LLM tool calling, FastAPI endpoints)
 ```
 
 ## Setup
