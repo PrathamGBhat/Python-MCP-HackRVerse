@@ -42,18 +42,24 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(..., max_length=400)
     history: list[ChatMessage] = Field(default_factory=list)
 
 
 # LLM endpoint
 @app.post("/chat")
-@limiter.limit("15/minute")
+@limiter.limit("5/minute")
 async def chat(request: Request, response: Response, chat_request: ChatRequest):
     try:
-        # Handle missing message
-        if not chat_request.message or not chat_request.message.strip():
+        # Handle missing message or length exceeding limit
+        clean_msg = chat_request.message.strip()
+        if not clean_msg:
             return JSONResponse(status_code=400, content={"error": "Message cannot be empty."})
+        if len(clean_msg) > 400:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Message exceeds maximum allowed limit of 400 characters."}
+            )
 
         # Format chat history
         history = [item.model_dump() for item in chat_request.history if item.content.strip()]
