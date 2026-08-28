@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>PyRef · Python CP Reference Assistant</title>
+<title>PyRef · Python CP Reference</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -26,7 +26,7 @@
     
     <div class="header__main">
       <div class="python-logo" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M11.898 2C6.874 2 7.185 2.217 7.185 4.316V6.15H12V6.765H5.068C2.915 6.765 2 8.016 2 11.597c0 3.58 1.096 4.707 3.068 4.707H6.5v-2.222c0-2.39 2.023-4.482 4.417-4.482h4.464V8.113c0-2.112-.34-6.113-3.483-6.113zm-1.87 1.48a.952.952 0 1 1 0 1.904.952.952 0 0 1 0-1.904z" fill="url(#py-grad1)"/>
           <path d="M12.102 22c5.024 0 4.713-.217 4.713-2.316V17.85H12v-.615h6.932c2.153 0 3.068-1.251 3.068-4.832 0-3.58-1.096-4.707-3.068-4.707H17.5v2.222c0 2.39-2.023 4.482-4.417 4.482H8.619v1.489c0 2.112.34 6.113 3.483 6.113zm1.87-1.48a.952.952 0 1 1 0-1.904.952.952 0 0 1 0 1.904z" fill="url(#py-grad2)"/>
           <defs>
@@ -42,19 +42,8 @@
         </svg>
       </div>
       <div>
-        <h1 class="header__title">Python CP Reference Assistant</h1>
-        <p class="header__subtitle">Syntax, built-ins, & standard library quick reference</p>
-      </div>
-    </div>
-
-    <div class="rules-card">
-      <div class="rule-item rule-item--allowed">
-        <span class="rule-icon">✓</span>
-        <span><strong>Allowed:</strong> Syntax rules, built-in functions, <code>heapq</code>, <code>collections</code>, <code>bisect</code>, <code>itertools</code>, <code>sys.stdin</code>, and short generic syntax snippets.</span>
-      </div>
-      <div class="rule-item rule-item--forbidden">
-        <span class="rule-icon">✕</span>
-        <span><strong>Prohibited:</strong> Solving contest problems, algorithm derivation, full problem logic, or analyzing pasted problem statements.</span>
+        <h1 class="header__title">PyRef Assistant</h1>
+        <p class="header__subtitle">Python syntax & general concept reference for CP contestants</p>
       </div>
     </div>
   </header>
@@ -66,13 +55,7 @@
         <span class="msg__time">System</span>
       </div>
       <div class="msg__content">
-        <p>Welcome to the <strong>Python CP Reference Assistant</strong>! I'm here to answer questions about Python syntax, standard library modules (like <code>collections</code>, <code>heapq</code>, <code>bisect</code>), and fast I/O idioms.</p>
-        <p><em>Example queries:</em></p>
-        <ul>
-          <li><code>How do I use min-heap / heapq in Python?</code></li>
-          <li><code>What is the syntax for defaultdict with list as factory?</code></li>
-          <li><code>How to perform fast I/O using sys.stdin.readline?</code></li>
-        </ul>
+        <p>Welcome to <strong>PyRef</strong>! Ask any question about Python syntax, standard libraries (like <code>collections</code>, <code>heapq</code>, <code>bisect</code>), or general programming concepts (stacks, queues, binary search).</p>
       </div>
     </div>
   </main>
@@ -86,13 +69,14 @@
         id="messageInput"
         rows="1"
         maxlength="400"
-        placeholder="Ask a Python syntax or standard library question... (Shift+Enter for newline)"
+        placeholder="Ask a Python concept or syntax question..."
         autocomplete="off"
         required
       ></textarea>
+      <span class="char-counter" id="charCounter">0/400</span>
       <button type="submit" id="sendBtn" title="Send message">
         <span>Send</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"></line>
           <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
         </svg>
@@ -105,4 +89,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-

@@ -4,6 +4,7 @@ const sendBtn = document.getElementById("sendBtn");
 const transcript = document.getElementById("transcript");
 const status = document.getElementById("status");
 const clearBtn = document.getElementById("clearBtn");
+const charCounter = document.getElementById("charCounter");
 
 const HISTORY_KEY = "pyref-cp-conversation";
 const DEFAULT_COOLDOWN_SECONDS = 4;
@@ -37,10 +38,19 @@ function restoreConversation() {
   }
 }
 
-// Auto-grow textarea height
+function updateCharCounter() {
+  if (charCounter) {
+    const len = input.value.length;
+    charCounter.textContent = `${len}/400`;
+    charCounter.classList.toggle("char-counter--limit", len >= 380);
+  }
+}
+
+// Auto-grow textarea height + update character counter
 input.addEventListener("input", () => {
   input.style.height = "auto";
   input.style.height = Math.min(input.scrollHeight, 140) + "px";
+  updateCharCounter();
 });
 
 // Enter to submit, Shift+Enter for new line
@@ -57,7 +67,6 @@ if (clearBtn) {
     if (confirm("Clear chat history?")) {
       conversation = [];
       sessionStorage.removeItem(HISTORY_KEY);
-      // Clear transcript except first default message
       const botInitial = transcript.querySelector(".msg--bot");
       transcript.innerHTML = "";
       if (botInitial) transcript.appendChild(botInitial);
@@ -70,10 +79,9 @@ function renderFormattedContent(text) {
     try {
       return window.marked.parse(text, { breaks: true, gfm: true });
     } catch {
-      // Fallback if parsing fails
+      // Fallback
     }
   }
-  // Basic fallback escaping + line break
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML.replace(/\n/g, "<br>");
@@ -195,6 +203,7 @@ function startCooldown(seconds = DEFAULT_COOLDOWN_SECONDS) {
 }
 
 restoreConversation();
+updateCharCounter();
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -213,6 +222,7 @@ form.addEventListener("submit", async (e) => {
   saveConversation();
   input.value = "";
   input.style.height = "auto";
+  updateCharCounter();
   startCooldown(1);
   setLoading(true);
 
@@ -243,4 +253,3 @@ form.addEventListener("submit", async (e) => {
     input.focus();
   }
 });
-

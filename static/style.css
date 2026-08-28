@@ -63,12 +63,12 @@ html, body {
 /* ---------- Header ---------- */
 
 .console__header {
-  padding: 20px 24px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(180deg, var(--surface-raised), var(--surface));
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .header__top {
@@ -121,12 +121,12 @@ html, body {
 .header__main {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .python-logo {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   background: var(--surface-raised);
   border: 1px solid var(--border);
@@ -139,7 +139,7 @@ html, body {
 
 .header__title {
   font-family: var(--font-sans);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   margin: 0;
   color: var(--text);
@@ -147,48 +147,9 @@ html, body {
 }
 
 .header__subtitle {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-muted);
   margin: 2px 0 0;
-}
-
-/* Rules banner */
-
-.rules-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 12.5px;
-  line-height: 1.45;
-}
-
-.rule-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.rule-icon {
-  font-weight: bold;
-  font-size: 12px;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.rule-item--allowed .rule-icon { color: var(--green); }
-.rule-item--forbidden .rule-icon { color: var(--red); }
-.rule-item strong { color: var(--text); }
-.rule-item code {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  background: rgba(56, 126, 184, 0.15);
-  color: var(--py-blue-light);
-  padding: 1px 5px;
-  border-radius: 4px;
 }
 
 /* ---------- Transcript ---------- */
@@ -409,6 +370,18 @@ html, body {
   outline: none;
 }
 
+.char-counter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.char-counter--limit {
+  color: var(--py-gold);
+}
+
 #sendBtn {
   flex-shrink: 0;
   background: var(--accent);
@@ -440,9 +413,8 @@ html, body {
 
 @media (max-width: 600px) {
   .console { border-left: none; border-right: none; }
-  .console__header { padding: 16px; }
+  .console__header { padding: 14px 16px; }
   .console__body { padding: 16px; }
   .console__input { padding: 12px 16px; }
-  .header__title { font-size: 18px; }
+  .header__title { font-size: 17px; }
 }
-
