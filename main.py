@@ -83,9 +83,8 @@ async def chat(request: Request, response: Response, chat_request: ChatRequest):
             )
 
         # Prompt the LLM
-        # Extract history as plain text from pydantic model, capped to last 10 turns
         history = [item.model_dump() for item in chat_request.history if item.content.strip()]
-        history = history[-10:]
+        history = history[-10:] # Max 10 previous turns
         reply = await groq_api.get_response_async(chat_request.message, history, mcp_client=fetch_mcp)
 
         return {"response": reply}
