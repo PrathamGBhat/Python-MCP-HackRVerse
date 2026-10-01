@@ -8,17 +8,46 @@ It is equipped with strict system prompt guardrails to **refuse solving problem 
 
 ```
 .
-├── main.py           FastAPI app, POST /chat, rate limiting, lifespan MCP management
-├── llm.py            Groq LLM client with MCP tool-calling loop & CP guardrails
-├── mcp_client.py     Async Stdio MCP client wrapper for mcp-server-fetch
-├── requirements.txt  Python dependencies (fastapi, groq, mcp-server-fetch, etc.)
-├── static/           Frontend assets (HTML, CSS, JS)
-└── tests/            Automated test suite (MCP fetch, LLM tool calling, FastAPI endpoints)
+├── main.py              FastAPI app, POST /chat, rate limiting, lifespan MCP management
+├── groq_api.py          Groq API client with MCP tool-calling loop & guardrails
+├── fetch_mcp.py         Async Stdio MCP client wrapper for mcp-server-fetch
+├── requirements.txt     Python dependencies (fastapi, groq, mcp-server-fetch, etc.)
+├── Dockerfile           Container definition (python:3.12-slim, non-root user)
+├── docker-compose.yml   One-command local container orchestrator
+├── static/              Frontend assets (HTML, CSS, JS)
+└── tests/               Automated test suite
 ```
 
 ## Setup
 
-1. **Activate your virtual environment**
+1. **Configure Environment Variables**
+   Copy `.env.example` to `.env` (or set `GROQ_API_KEY` in environment):
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   GROQ_MODEL=llama-3.1-8b-instant
+   # Optional: customize chatbot persona/behavior
+   # SYSTEM_PROMPT="Your custom system prompt..."
+   ```
+
+## Running with Docker (Recommended)
+
+### Option A: Using Docker Compose
+```bash
+docker compose up --build
+```
+
+### Option B: Using Plain Docker
+```bash
+# Build the image
+docker build -t pyref .
+
+# Run container with environment file
+docker run -p 8000:8000 --env-file .env pyref
+```
+
+## Running Locally (Without Docker)
+
+1. **Activate virtual environment**
    ```bash
    venv\Scripts\activate      # Linux/macOS: source venv/bin/activate
    ```
@@ -28,18 +57,10 @@ It is equipped with strict system prompt guardrails to **refuse solving problem 
    pip install -r requirements.txt
    ```
 
-3. **Configure API Key**
-   Copy `.env.example` to `.env` (or set `GROQ_API_KEY` in environment):
-   ```env
-   GROQ_API_KEY=your_groq_api_key_here
-   GROQ_MODEL=llama-3.1-8b-instant
+3. **Run the server**
+   ```bash
+   uvicorn main:app --reload
    ```
-
-## Run Locally
-
-```bash
-uvicorn main:app --reload
-```
 
 Open **http://127.0.0.1:8000** in your browser.
 
