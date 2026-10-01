@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import Literal
 from contextlib import asynccontextmanager
 
@@ -10,23 +11,31 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-import llm
-from mcp_client import MCPClient
+import groq_api
+from fetch_mcp import FetchMCP
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("main")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+static_dir = os.path.join(BASE_DIR, "static")
 
 # Initialize MCP client instance
-mcp_client = MCPClient()
-
+fetch_mcp = FetchMCP()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("[FastAPI] App starting up. Initializing MCPClient...")
+    logger.info("App starting up. Initializing FetchMCP...")
     try:
-        await mcp_client.initialize()
+        await fetch_mcp.initialize()
     except Exception as err:
-        print(f"[FastAPI] WARNING: MCPClient failed to initialize on startup: {err}")
+        logger.warning("FetchMCP failed to initialize on startup: %s", err)
     yield
-    print("[FastAPI] App shutting down. Closing MCPClient...")
-    await mcp_client.close()
+    logger.info("App shutting down. Closing FetchMCP...")
+    await fetch_mcp.close()
 
 
 # Setup app and rate limiter
@@ -36,54 +45,64 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
+# SCHEMA
+
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str
 
-
 class ChatRequest(BaseModel):
-    message: str = Field(..., max_length=400)
     history: list[ChatMessage] = Field(default_factory=list)
+    message: str = Field(..., max_length=400)
 
 
-# LLM endpoint
-@app.post("/chat")
-@limiter.limit("5/minute")
-async def chat(request: Request, response: Response, chat_request: ChatRequest):
-    try:
-        # Handle missing message or length exceeding limit
-        clean_msg = chat_request.message.strip()
-        if not clean_msg:
-            return JSONResponse(status_code=400, content={"error": "Message cannot be empty."})
-        if len(clean_msg) > 400:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Message exceeds maximum allowed limit of 400 characters."}
-            )
-
-        # Format chat history
-        history = [item.model_dump() for item in chat_request.history if item.content.strip()]
-
-        # Get response from LLM using MCP client
-        reply = await llm.get_response_async(chat_request.message, history, mcp_client=mcp_client)
-        return {"response": reply}
-
-    except Exception as exc:
-        print(f"[/chat] error: {exc}")
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"{exc}"},
-        )
-
+# ENDPOINTS
 
 # Health endpoint
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+# LLM endpoint
+@app.post("/chat")
+@limiter.limit("5/minute")
+async def chat(request: Request, response: Response, chat_request: ChatRequest):
+    try:
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-static_dir = os.path.join(BASE_DIR, "static")
+        # Handle missing message or length exceeding limit
+        clean_msg = chat_request.message.strip()
+        if not clean_msg:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Message cannot be empty."}
+            )
+        if len(clean_msg) > 400:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Message exceeds maximum allowed limit of 400 characters."}
+            )
 
-# Serve frontend (/static directory) at "/"
+        # Prompt the LLM
+        # Extract history as plain text from pydantic model, capped to last 10 turns
+        history = [item.model_dump() for item in chat_request.history if item.content.strip()]
+        history = history[-10:]
+        reply = await groq_api.get_response_async(chat_request.message, history, mcp_client=fetch_mcp)
+
+        return {"response": reply}
+
+    except RuntimeError as exc:
+        logger.error("[/chat] runtime error: %s", exc)
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(exc)},
+        )
+    except Exception as exc:
+        logger.error("[/chat] unexpected error: %s", exc)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "An unexpected error occurred. Please try again."},
+        )
+    
+
+# Serve static frontend at "/"
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
