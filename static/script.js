@@ -7,6 +7,20 @@ const clearBtn = document.getElementById("clearBtn");
 const charCounter = document.getElementById("charCounter");
 
 const HISTORY_KEY = "pyref-cp-conversation";
+const SESSION_KEY = "pyref-session-id";
+
+function newSessionId() {
+  return (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+let sessionId = sessionStorage.getItem(SESSION_KEY);
+if (!sessionId) {
+  sessionId = newSessionId();
+  sessionStorage.setItem(SESSION_KEY, sessionId);
+}
+
 const DEFAULT_COOLDOWN_SECONDS = 4;
 let cooldownUntil = 0;
 let cooldownTimer = null;
@@ -67,6 +81,8 @@ if (clearBtn) {
     if (confirm("Clear chat history?")) {
       conversation = [];
       sessionStorage.removeItem(HISTORY_KEY);
+      sessionId = newSessionId();
+      sessionStorage.setItem(SESSION_KEY, sessionId);
       const botInitial = transcript.querySelector(".msg--bot");
       transcript.innerHTML = "";
       if (botInitial) transcript.appendChild(botInitial);
@@ -217,7 +233,6 @@ form.addEventListener("submit", async (e) => {
   if (!message) return;
 
   addMessage(message, "user");
-  const history = conversation.slice();
   conversation.push({ role: "user", content: message });
   saveConversation();
   input.value = "";
@@ -230,7 +245,7 @@ form.addEventListener("submit", async (e) => {
     const res = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, session_id: sessionId }),
     });
 
     const data = await res.json();

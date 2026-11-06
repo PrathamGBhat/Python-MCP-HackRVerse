@@ -1,6 +1,7 @@
 import os
 import logging
-from typing import Literal
+from collections import OrderedDict
+from typing import Optional
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
@@ -13,6 +14,7 @@ from slowapi.util import get_remote_address
 
 import groq_api
 from fetch_mcp import FetchMCP
+from guardrails import REFUSAL
 
 logging.basicConfig(
     level=logging.INFO,
@@ -47,13 +49,37 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # SCHEMA
 
-class ChatMessage(BaseModel):
-    role: Literal["user", "assistant"]
-    content: str
-
 class ChatRequest(BaseModel):
-    history: list[ChatMessage] = Field(default_factory=list)
     message: str = Field(..., max_length=400)
+    session_id: Optional[str] = Field(
+        default=None, max_length=64, pattern=r"^[A-Za-z0-9_-]+$"
+    )
+
+
+# SESSIONS
+
+SESSIONS: "OrderedDict[str, list[dict]]" = OrderedDict()
+MAX_SESSIONS = 1000   # oldest sessions are dropped beyond this
+MAX_ITEMS = 10        # last 10 messages per session
+
+
+def get_history(session_id: Optional[str]) -> list[dict]:
+    if not session_id or session_id not in SESSIONS:
+        return []
+    SESSIONS.move_to_end(session_id)
+    return list(SESSIONS[session_id])
+
+
+def save_turn(session_id: Optional[str], user_msg: str, reply: str) -> None:
+    if not session_id:
+        return
+    hist = SESSIONS.setdefault(session_id, [])
+    hist.append({"role": "user", "content": user_msg})
+    hist.append({"role": "assistant", "content": reply})
+    del hist[:-MAX_ITEMS]
+    SESSIONS.move_to_end(session_id)
+    while len(SESSIONS) > MAX_SESSIONS:
+        SESSIONS.popitem(last=False)
 
 
 # ENDPOINTS
@@ -68,7 +94,6 @@ def health():
 @limiter.limit("5/minute")
 async def chat(request: Request, response: Response, chat_request: ChatRequest):
     try:
-
         # Handle missing message or length exceeding limit
         clean_msg = chat_request.message.strip()
         if not clean_msg:
@@ -82,10 +107,12 @@ async def chat(request: Request, response: Response, chat_request: ChatRequest):
                 content={"error": "Message exceeds maximum allowed limit of 400 characters."}
             )
 
-        # Prompt the LLM
-        history = [item.model_dump() for item in chat_request.history if item.content.strip()]
-        history = history[-10:] # Max 10 previous turns
-        reply = await groq_api.get_response_async(chat_request.message, history, mcp_client=fetch_mcp)
+        history = get_history(chat_request.session_id)
+        reply = await groq_api.get_response_async(clean_msg, history, mcp_client=fetch_mcp)
+
+        # Only remember turns that were actually answered, never refusals.
+        if reply != REFUSAL:
+            save_turn(chat_request.session_id, clean_msg, reply)
 
         return {"response": reply}
 
@@ -101,7 +128,7 @@ async def chat(request: Request, response: Response, chat_request: ChatRequest):
             status_code=500,
             content={"error": "An unexpected error occurred. Please try again."},
         )
-    
+
 
 # Serve static frontend at "/"
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

@@ -5,7 +5,7 @@ import asyncio
 # Ensure parent directory is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from mcp_client import MCPClient
+from fetch_mcp import FetchMCP as MCPClient
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")

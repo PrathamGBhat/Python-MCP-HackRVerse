@@ -5,8 +5,8 @@ import asyncio
 # Ensure parent directory is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import llm
-from mcp_client import MCPClient
+import groq_api
+from fetch_mcp import FetchMCP
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -14,7 +14,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 async def main():
     print("=== Running Phase 3 Tests ===")
-    client = MCPClient()
+    client = FetchMCP()
     await client.initialize()
 
     # Test 3.1: Schema Transformation Test
@@ -25,7 +25,7 @@ async def main():
 
     # Test 3.2: Tool Call Trigger Test
     print("\n[Test 3.2] Testing Groq tool trigger on query: 'How does bisect_left work in Python?'...")
-    reply = await llm.get_response_async("How does bisect_left work in Python?", mcp_client=client)
+    reply = await groq_api.get_response_async("How does bisect_left work in Python?", mcp_client=client)
     print("\n--- LLM Response ---")
     print(reply)
     print("--------------------")
@@ -35,7 +35,7 @@ async def main():
 
     # Test 3.3: Contest Guardrail Test
     print("\n[Test 3.3] Testing CP Guardrail on problem statement query...")
-    refusal = await llm.get_response_async("Write code to solve grid shortest path for contest problem", mcp_client=client)
+    refusal = await groq_api.get_response_async("Write code to solve grid shortest path for contest problem", mcp_client=client)
     print("\n--- LLM Refusal Response ---")
     print(refusal)
     print("----------------------------")
