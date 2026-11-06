@@ -1,3 +1,7 @@
+// ============================================================
+// PyRef — Clean Developer Chatbot UI (v3.0)
+// ============================================================
+
 const form = document.getElementById("chatForm");
 const input = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -5,6 +9,9 @@ const transcript = document.getElementById("transcript");
 const status = document.getElementById("status");
 const clearBtn = document.getElementById("clearBtn");
 const charCounter = document.getElementById("charCounter");
+const welcomeMessage = document.getElementById("welcomeMessage");
+
+// ---- Session Management ----
 
 const HISTORY_KEY = "pyref-cp-conversation";
 const SESSION_KEY = "pyref-session-id";
@@ -21,6 +28,8 @@ if (!sessionId) {
   sessionStorage.setItem(SESSION_KEY, sessionId);
 }
 
+// ---- State ----
+
 const DEFAULT_COOLDOWN_SECONDS = 4;
 let cooldownUntil = 0;
 let cooldownTimer = null;
@@ -28,13 +37,15 @@ let isLoading = false;
 
 let conversation = loadConversation();
 
+// ---- Persistence ----
+
 function loadConversation() {
   try {
     const saved = JSON.parse(sessionStorage.getItem(HISTORY_KEY) || "[]");
     return Array.isArray(saved)
-      ? saved.filter((message) =>
-          (message.role === "user" || message.role === "assistant") &&
-          typeof message.content === "string" && message.content.trim()
+      ? saved.filter((m) =>
+          (m.role === "user" || m.role === "assistant") &&
+          typeof m.content === "string" && m.content.trim()
         )
       : [];
   } catch {
@@ -47,27 +58,33 @@ function saveConversation() {
 }
 
 function restoreConversation() {
+  if (conversation.length > 0 && welcomeMessage) {
+    welcomeMessage.style.display = "none";
+  }
   for (const message of conversation) {
     addMessage(message.content, message.role === "user" ? "user" : "bot");
   }
 }
 
+// ---- Char counter ----
+
 function updateCharCounter() {
   if (charCounter) {
     const len = input.value.length;
     charCounter.textContent = `${len}/400`;
-    charCounter.classList.toggle("char-counter--limit", len >= 380);
+    charCounter.classList.toggle("limit", len >= 380);
   }
 }
 
-// Auto-grow textarea height + update character counter
+// ---- Auto-grow textarea ----
+
 input.addEventListener("input", () => {
   input.style.height = "auto";
-  input.style.height = Math.min(input.scrollHeight, 140) + "px";
+  input.style.height = Math.min(input.scrollHeight, 130) + "px";
   updateCharCounter();
 });
 
-// Enter to submit, Shift+Enter for new line
+// Enter to submit, Shift+Enter for newline
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -75,33 +92,41 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-// Clear conversation
+// ---- Clear chat ----
+
 if (clearBtn) {
   clearBtn.addEventListener("click", () => {
-    if (confirm("Clear chat history?")) {
+    if (confirm("Clear conversation history?")) {
       conversation = [];
       sessionStorage.removeItem(HISTORY_KEY);
       sessionId = newSessionId();
       sessionStorage.setItem(SESSION_KEY, sessionId);
-      const botInitial = transcript.querySelector(".msg--bot");
+
       transcript.innerHTML = "";
-      if (botInitial) transcript.appendChild(botInitial);
+      if (welcomeMessage) {
+        welcomeMessage.style.display = "";
+        transcript.appendChild(welcomeMessage);
+      }
     }
   });
 }
+
+// ---- Markdown rendering ----
 
 function renderFormattedContent(text) {
   if (window.marked) {
     try {
       return window.marked.parse(text, { breaks: true, gfm: true });
     } catch {
-      // Fallback
+      // fallback
     }
   }
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML.replace(/\n/g, "<br>");
 }
+
+// ---- Code block enhancement ----
 
 function enhanceCodeBlocks(container) {
   const preElements = container.querySelectorAll("pre");
@@ -115,21 +140,28 @@ function enhanceCodeBlocks(container) {
     header.className = "code-wrapper__header";
 
     const langSpan = document.createElement("span");
+    langSpan.className = "code-wrapper__lang";
     const code = pre.querySelector("code");
     const langClass = code ? Array.from(code.classList).find(c => c.startsWith("language-")) : "";
     langSpan.textContent = langClass ? langClass.replace("language-", "").toUpperCase() : "PYTHON";
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "code-wrapper__copy";
-    copyBtn.textContent = "Copy Snippet";
+    copyBtn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <span>Copy</span>
+    `;
 
     copyBtn.addEventListener("click", () => {
       const codeText = code ? code.innerText : pre.innerText;
       navigator.clipboard.writeText(codeText).then(() => {
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy Snippet"; }, 2000);
+        copyBtn.querySelector("span").textContent = "Copied ✓";
+        setTimeout(() => { copyBtn.querySelector("span").textContent = "Copy"; }, 2000);
       }).catch(() => {
-        copyBtn.textContent = "Failed";
+        copyBtn.querySelector("span").textContent = "Failed";
       });
     });
 
@@ -142,50 +174,87 @@ function enhanceCodeBlocks(container) {
   });
 }
 
+// ---- Add messages to DOM ----
+
 function addMessage(text, role) {
-  const msg = document.createElement("div");
-  msg.className = `msg msg--${role}`;
-
-  const header = document.createElement("div");
-  header.className = "msg__header";
-
-  const label = document.createElement("span");
-  label.className = "msg__label";
-  label.textContent = role === "user" ? "You" : role === "error" ? "System Error" : "PyRef";
-
-  const time = document.createElement("span");
-  time.className = "msg__time";
-  const now = new Date();
-  time.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-  header.appendChild(label);
-  header.appendChild(time);
-
-  const contentDiv = document.createElement("div");
-  contentDiv.className = "msg__content";
-
-  if (role === "user") {
-    const p = document.createElement("p");
-    p.textContent = text;
-    contentDiv.appendChild(p);
-  } else {
-    contentDiv.innerHTML = renderFormattedContent(text);
-    enhanceCodeBlocks(contentDiv);
+  if (welcomeMessage && welcomeMessage.style.display !== "none") {
+    welcomeMessage.style.display = "none";
   }
 
-  msg.appendChild(header);
-  msg.appendChild(contentDiv);
-  transcript.appendChild(msg);
+  const now = new Date();
+  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+  const row = document.createElement("div");
+
+  if (role === "user") {
+    row.className = "message-row message-row--user";
+    const bubble = document.createElement("div");
+    bubble.className = "user-bubble";
+
+    const meta = document.createElement("div");
+    meta.className = "user-bubble__meta";
+    meta.innerHTML = `<span>YOU</span><span>${timeStr}</span>`;
+
+    const body = document.createElement("div");
+    body.className = "user-bubble__text";
+    body.textContent = text;
+
+    bubble.appendChild(meta);
+    bubble.appendChild(body);
+    row.appendChild(bubble);
+
+  } else if (role === "error") {
+    row.className = "message-row message-row--error";
+    const card = document.createElement("div");
+    card.className = "error-card";
+    card.textContent = text;
+    row.appendChild(card);
+
+  } else {
+    // Bot message
+    row.className = "message-row message-row--bot";
+    const card = document.createElement("div");
+    card.className = "bot-card";
+
+    const meta = document.createElement("div");
+    meta.className = "bot-card__meta";
+    meta.innerHTML = `
+      <span class="meta-tag">PyRef</span>
+      <span>Official Reference</span>
+      <span class="meta-time">${timeStr}</span>
+    `;
+
+    const content = document.createElement("div");
+    content.className = "bot-card__content";
+    content.innerHTML = renderFormattedContent(text);
+    enhanceCodeBlocks(content);
+
+    card.appendChild(meta);
+    card.appendChild(content);
+    row.appendChild(card);
+  }
+
+  transcript.appendChild(row);
   transcript.scrollTop = transcript.scrollHeight;
 }
+
+// ---- Loading state ----
 
 function setLoading(loading) {
   isLoading = loading;
   sendBtn.disabled = loading || getCooldownRemaining() > 0;
   input.disabled = loading;
-  status.textContent = loading ? "PyRef is searching reference docs..." : "";
-  status.classList.toggle("visible", Boolean(status.textContent));
+
+  if (loading) {
+    status.textContent = "⚡ Fetching official reference docs & generating response...";
+    status.classList.add("visible");
+  } else if (getCooldownRemaining() <= 0) {
+    status.textContent = "";
+    status.classList.remove("visible");
+  }
 }
+
+// ---- Cooldown ----
 
 function getCooldownRemaining() {
   return Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
@@ -206,7 +275,7 @@ function updateCooldown() {
 
   sendBtn.disabled = true;
   if (!isLoading) {
-    status.textContent = `Next query in ${remaining}s`;
+    status.textContent = `Contest cooldown: next query in ${remaining}s`;
     status.classList.add("visible");
   }
 }
@@ -218,8 +287,12 @@ function startCooldown(seconds = DEFAULT_COOLDOWN_SECONDS) {
   updateCooldown();
 }
 
+// ---- Initialize ----
+
 restoreConversation();
 updateCharCounter();
+
+// ---- Form Submit Handler ----
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();

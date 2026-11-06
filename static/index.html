@@ -3,89 +3,127 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>PyRef · Python CP Reference</title>
+<title>PyRef · Python CP Reference Assistant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css" />
-<!-- Markdown parsing for code blocks and responses -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=6.0.0" />
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
-<div class="console">
+<!-- Ambient background mesh & subtle grid -->
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow" aria-hidden="true"></div>
 
-  <header class="console__header">
-    <div class="header__top">
-      <div class="status-badge">
-        <span class="dot dot--live"></span>
-        <span>PYREF · CONTEST MODE</span>
-      </div>
-      <button class="clear-btn" id="clearBtn" title="Clear chat transcript">Clear Chat</button>
-    </div>
-    
-    <div class="header__main">
-      <div class="python-logo" aria-hidden="true">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M11.898 2C6.874 2 7.185 2.217 7.185 4.316V6.15H12V6.765H5.068C2.915 6.765 2 8.016 2 11.597c0 3.58 1.096 4.707 3.068 4.707H6.5v-2.222c0-2.39 2.023-4.482 4.417-4.482h4.464V8.113c0-2.112-.34-6.113-3.483-6.113zm-1.87 1.48a.952.952 0 1 1 0 1.904.952.952 0 0 1 0-1.904z" fill="url(#py-grad1)"/>
-          <path d="M12.102 22c5.024 0 4.713-.217 4.713-2.316V17.85H12v-.615h6.932c2.153 0 3.068-1.251 3.068-4.832 0-3.58-1.096-4.707-3.068-4.707H17.5v2.222c0 2.39-2.023 4.482-4.417 4.482H8.619v1.489c0 2.112.34 6.113 3.483 6.113zm1.87-1.48a.952.952 0 1 1 0-1.904.952.952 0 0 1 0 1.904z" fill="url(#py-grad2)"/>
-          <defs>
-            <linearGradient id="py-grad1" x1="2" y1="2" x2="16" y2="16" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#387eb8"/>
-              <stop offset="1" stop-color="#366994"/>
-            </linearGradient>
-            <linearGradient id="py-grad2" x1="8" y1="8" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#ffe052"/>
-              <stop offset="1" stop-color="#ffca28"/>
-            </linearGradient>
-          </defs>
+<div class="app-shell">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-glyph">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M11.898 2C6.874 2 7.185 2.217 7.185 4.316V6.15H12V6.765H5.068C2.915 6.765 2 8.016 2 11.597c0 3.58 1.096 4.707 3.068 4.707H6.5v-2.222c0-2.39 2.023-4.482 4.417-4.482h4.464V8.113c0-2.112-.34-6.113-3.483-6.113zm-1.87 1.48a.952.952 0 1 1 0 1.904.952.952 0 0 1 0-1.904z" fill="#2563EB"/>
+          <path d="M12.102 22c5.024 0 4.713-.217 4.713-2.316V17.85H12v-.615h6.932c2.153 0 3.068-1.251 3.068-4.832 0-3.58-1.096-4.707-3.068-4.707H17.5v2.222c0 2.39-2.023 4.482-4.417 4.482H8.619v1.489c0 2.112.34 6.113 3.483 6.113zm1.87-1.48a.952.952 0 1 1 0-1.904.952.952 0 0 1 0 1.904z" fill="#F8FAFC"/>
         </svg>
       </div>
-      <div>
-        <h1 class="header__title">PyRef Assistant</h1>
-        <p class="header__subtitle">Python syntax & general concept reference for CP contestants</p>
+      <div class="brand-meta">
+        <div class="brand-title-row">
+          <span class="brand-name">PyRef</span>
+          <span class="version-tag">STDLIB v3.12</span>
+        </div>
+        <span class="brand-desc">Competitive Programming Reference</span>
       </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="status-pill">
+        <span class="status-pulse"></span>
+        <span class="status-text">CONTEST GUARDRAILS ACTIVE</span>
+      </div>
+      <button class="action-btn" id="clearBtn" title="Clear conversation history">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        <span>Clear</span>
+      </button>
     </div>
   </header>
 
-  <main class="console__body" id="transcript" aria-live="polite">
-    <div class="msg msg--bot">
-      <div class="msg__header">
-        <span class="msg__label">PyRef</span>
-        <span class="msg__time">System</span>
+  <!-- Chat Viewport -->
+  <main class="chat-viewport" id="transcript">
+
+    <!-- Empty State Hero (Informational only, NO autofill buttons) -->
+    <div class="hero-box" id="welcomeMessage">
+      <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        <span>Zero-Distraction Syntax Assistant</span>
       </div>
-      <div class="msg__content">
-        <p>Welcome to <strong>PyRef</strong>! Ask any question about Python syntax, standard libraries (like <code>collections</code>, <code>heapq</code>, <code>bisect</code>), or general programming concepts (stacks, queues, binary search).</p>
+      <h2 class="hero-title">Python Reference for Contestants</h2>
+      <p class="hero-subtitle">
+        Look up function signatures, stdlib modules (<code>heapq</code>, <code>bisect</code>, <code>collections</code>, <code>itertools</code>), and fast I/O idioms without leaving your contest mindset.
+      </p>
+
+      <div class="capability-row">
+        <div class="cap-item">
+          <span class="cap-dot"></span>
+          <span>Official Python Docs via MCP</span>
+        </div>
+        <div class="cap-item">
+          <span class="cap-dot"></span>
+          <span>Strict Algorithm & Problem Refusal</span>
+        </div>
+        <div class="cap-item">
+          <span class="cap-dot"></span>
+          <span>Generic 3–5 Line Idiom Snippets</span>
+        </div>
       </div>
     </div>
+
   </main>
 
-  <div class="console__status" id="status"></div>
+  <!-- Live Status Bar -->
+  <div class="status-bar" id="status"></div>
 
-  <form class="console__input" id="chatForm">
-    <div class="input-wrapper">
-      <span class="prompt-glyph">&gt;_</span>
+  <!-- Command Input Area -->
+  <footer class="chat-footer">
+    <form class="command-box" id="chatForm">
+      <div class="command-box__prefix">
+        <span class="prompt-arrow">❯</span>
+      </div>
       <textarea
         id="messageInput"
         rows="1"
         maxlength="400"
-        placeholder="Ask a Python concept or syntax question..."
+        placeholder="Query Python syntax, built-ins, or stdlib modules..."
         autocomplete="off"
+        spellcheck="false"
         required
       ></textarea>
-      <span class="char-counter" id="charCounter">0/400</span>
-      <button type="submit" id="sendBtn" title="Send message">
-        <span>Send</span>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
+      <div class="command-box__actions">
+        <span class="char-badge" id="charCounter">0/400</span>
+        <button type="submit" id="sendBtn" title="Send (Enter)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </form>
+    <div class="footer-meta">
+      <div class="shortcuts">
+        <span><kbd>↵</kbd> send</span>
+        <span><kbd>Shift + ↵</kbd> line</span>
+      </div>
+      <span class="session-guard-note">Contest mode enforced · Problem solving blocked</span>
     </div>
-  </form>
+  </footer>
 
 </div>
 
-<script src="script.js"></script>
+<script src="script.js?v=6.0.0"></script>
 </body>
 </html>

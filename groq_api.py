@@ -111,11 +111,11 @@ async def get_response_async(
             "temperature": 0.2,
             "max_tokens": 1000,
         }
-        if tools and turn < max_turns - 1:
+        if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
 
-        # NEW: run the blocking Groq call in a thread
+        # Run the blocking Groq call in a thread
         chat_completion = await asyncio.to_thread(
             client.chat.completions.create, **kwargs
         )
@@ -154,6 +154,29 @@ async def get_response_async(
                     "tool_call_id": tc.id,
                     "content": tool_result,
                 })
+
+            # If this was the last allowed turn, prompt model for final response directly
+            if turn == max_turns - 1:
+                logger.info("Reached turn limit; requesting final synthesis from model.")
+                messages.append({
+                    "role": "system",
+                    "content": "You have fetched sufficient documentation. Provide your final reference response to the user now. Do not call any further tools.",
+                })
+                final_completion = await asyncio.to_thread(
+                    client.chat.completions.create,
+                    model=GROQ_MODEL,
+                    messages=messages,
+                    temperature=0.2,
+                    max_tokens=1000,
+                )
+                content = final_completion.choices[0].message.content or ""
+                if content.strip():
+                    if "```" in content or "def " in content:
+                        if not await asyncio.to_thread(reply_allowed, content):
+                            logger.info("BLOCKED by reply check")
+                            return REFUSAL
+                    return content
+
             continue
 
         content = response_message.content
