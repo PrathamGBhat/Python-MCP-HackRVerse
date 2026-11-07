@@ -741,3 +741,113 @@ textarea {
     display: none;
   }
 }
+
+/* ============================================================
+   Time & Space Complexity Card
+   ============================================================ */
+
+.complexity-card {
+  margin-top: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(248, 250, 252, 0.1);
+  border-left: 3px solid var(--electric-blue);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-family: var(--font-sans);
+}
+
+.complexity-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(248, 250, 252, 0.08);
+}
+
+.complexity-card__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cool-white-muted);
+  letter-spacing: 0.04em;
+}
+
+.complexity-card__title svg {
+  color: var(--electric-blue-light);
+}
+
+.complexity-card__safe {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #34D399;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+}
+
+.complexity-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.complexity-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.complexity-metric__label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--cool-white-dim);
+  letter-spacing: 0.04em;
+}
+
+.complexity-metric__value {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--cool-white);
+}
+
+.complexity-card__pitfall {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  line-height: 1.45;
+  color: #FDE68A;
+}
+
+.complexity-card__pitfall strong {
+  color: #FBBF24;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.bigo-graph-container {
+  margin: 10px 0 12px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(248, 250, 252, 0.12);
+}
+
+.bigo-graph-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 250px;
+}

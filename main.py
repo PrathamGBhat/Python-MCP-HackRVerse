@@ -120,11 +120,20 @@ async def chat(request: Request, response: Response, chat_request: ChatRequest):
         history = get_history(chat_request.session_id)
         reply = await groq_api.get_response_async(clean_msg, history, mcp_client=fetch_mcp)
 
-        # Only remember turns that were actually answered, never refusals.
-        if reply != REFUSAL:
-            save_turn(chat_request.session_id, clean_msg, reply)
+        blocked = (reply == REFUSAL)
+        parsed = groq_api.parse_complexity_payload(reply, query=clean_msg)
+        clean_reply = parsed["text"]
+        complexity_data = parsed["complexity"] if not blocked else None
 
-        return {"response": reply}
+        # Only remember turns that were actually answered, never refusals.
+        if not blocked:
+            save_turn(chat_request.session_id, clean_msg, clean_reply)
+
+        return {
+            "response": clean_reply,
+            "blocked": blocked,
+            "complexity": complexity_data,
+        }
 
     except RuntimeError as exc:
         logger.error("[/chat] runtime error: %s", exc)

@@ -62,7 +62,7 @@ function restoreConversation() {
     welcomeMessage.style.display = "none";
   }
   for (const message of conversation) {
-    addMessage(message.content, message.role === "user" ? "user" : "bot");
+    addMessage(message.content, message.role === "user" ? "user" : "bot", message.complexity || null);
   }
 }
 
@@ -174,9 +174,184 @@ function enhanceCodeBlocks(container) {
   });
 }
 
+// ---- Big-O Complexity Graph Visualizer ----
+
+function classifyBigO(str) {
+  if (!str) return "O(1)";
+  const s = str.toLowerCase().replace(/\s+/g, "");
+  if (s.includes("n!") || s.includes("factorial")) return "O(n!)";
+  if (s.includes("2^n") || s.includes("2^") || s.includes("exponential")) return "O(2^n)";
+  if (s.includes("n^3") || s.includes("cubic")) return "O(n^3)";
+  if (s.includes("n^2") || s.includes("n2") || s.includes("quadratic")) return "O(n^2)";
+  if (s.includes("nlogn") || s.includes("n*logn") || s.includes("n_log_n") || s.includes("linearithmic")) return "O(n log n)";
+  if (s.includes("sqrt") || s.includes("√")) return "O(sqrt n)";
+  if (s.includes("logn") || s.includes("log(n)") || s.includes("log_n") || s.includes("logarithmic")) return "O(log n)";
+  if (s.includes("o(n)") || s.includes("linear") || s.match(/\bo\(?n\)?\b/)) return "O(n)";
+  if (s.includes("o(1)") || s.includes("constant")) return "O(1)";
+  return "O(log n)";
+}
+
+function generateBigOGraphSVG(targetTime, targetSpace) {
+  const normTime = classifyBigO(targetTime);
+  const normSpace = classifyBigO(targetSpace);
+
+  const curves = [
+    { id: "O(1)", label: "O(1)", d: "M 60,215 L 450,215", lx: 455, ly: 219 },
+    { id: "O(log n)", label: "O(log n)", d: "M 60,225 Q 220,198 450,182", lx: 455, ly: 186 },
+    { id: "O(n)", label: "O(n)", d: "M 60,225 L 410,55", lx: 415, ly: 52 },
+    { id: "O(n log n)", label: "O(n log n)", d: "M 60,225 Q 255,180 330,40", lx: 335, ly: 36 },
+    { id: "O(n^2)", label: "O(n²)", d: "M 60,225 Q 195,205 250,35", lx: 255, ly: 30 },
+    { id: "O(n^3)", label: "O(n³)", d: "M 60,225 Q 155,212 195,32", lx: 200, ly: 26 },
+    { id: "O(2^n)", label: "O(2ⁿ)", d: "M 60,225 Q 125,215 150,30", lx: 155, ly: 23 },
+    { id: "O(n!)", label: "O(n!)", d: "M 60,225 Q 100,218 118,28", lx: 122, ly: 20 }
+  ];
+
+  let bgPaths = "";
+  let bgLabels = "";
+  let activePaths = "";
+  let activeLabels = "";
+
+  curves.forEach(c => {
+    const isTarget = (c.id === normTime || (c.id === normSpace && normSpace !== normTime));
+
+    if (!isTarget) {
+      // Light grey curve for all other non-matching complexities
+      bgPaths += `<path d="${c.d}" fill="none" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" />`;
+      bgLabels += `<text x="${c.lx}" y="${c.ly}" fill="#94A3B8" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" font-weight="500">${c.id}</text>`;
+    } else {
+      // Dark bold curve for this algorithm's complexity
+      activePaths += `
+        <path d="${c.d}" fill="none" stroke="#0F172A" stroke-width="4.2" stroke-linecap="round" />
+      `;
+      // End highlight point
+      const lastCoord = c.d.split(" ").pop().split(",");
+      const ex = parseFloat(lastCoord[0]);
+      const ey = parseFloat(lastCoord[1]);
+      activePaths += `<circle cx="${ex}" cy="${ey}" r="5" fill="#0F172A" stroke="#FFFFFF" stroke-width="2" />`;
+
+      // Dark badge
+      const badgeW = 95;
+      activeLabels += `
+        <g transform="translate(${Math.min(c.lx, 425)}, ${c.ly - 13})">
+          <rect width="${badgeW}" height="19" rx="4" fill="#0F172A" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))" />
+          <text x="${badgeW / 2}" y="13" fill="#F8FAFC" font-family="'JetBrains Mono', Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle">★ ${c.id}</text>
+        </g>
+      `;
+    }
+  });
+
+  return `
+    <div class="bigo-graph-container">
+      <svg class="bigo-graph-svg" viewBox="0 0 540 260" width="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrowX" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#0F172A" />
+          </marker>
+          <marker id="arrowY" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#0F172A" />
+          </marker>
+        </defs>
+
+        <!-- Crisp white background card -->
+        <rect x="0" y="0" width="540" height="260" rx="6" fill="#FFFFFF" />
+
+        <!-- Graph title & subtitle -->
+        <text x="60" y="18" fill="#475569" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" letter-spacing="0.04em">BIG-O COMPLEXITY GRAPH</text>
+        <text x="480" y="18" fill="#64748B" font-family="'JetBrains Mono', monospace" font-size="9" text-anchor="end">DARK = THIS ALGORITHM · LIGHT GREY = OTHERS</text>
+
+        <!-- Subtle horizontal grid lines -->
+        <line x1="60" y1="180" x2="475" y2="180" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="3,3" />
+        <line x1="60" y1="130" x2="475" y2="130" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="3,3" />
+        <line x1="60" y1="80" x2="475" y2="80" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="3,3" />
+
+        <!-- All light grey background curves -->
+        ${bgPaths}
+        ${bgLabels}
+
+        <!-- Active dark curves -->
+        ${activePaths}
+        ${activeLabels}
+
+        <!-- Y Axis -->
+        <line x1="60" y1="225" x2="60" y2="28" stroke="#0F172A" stroke-width="2" marker-end="url(#arrowY)" />
+        <text x="68" y="32" fill="#0F172A" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700">Time ↑</text>
+
+        <!-- X Axis -->
+        <line x1="60" y1="225" x2="490" y2="225" stroke="#0F172A" stroke-width="2" marker-end="url(#arrowX)" />
+        <text x="395" y="244" fill="#0F172A" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700">Input Size (N) →</text>
+      </svg>
+    </div>
+  `;
+}
+
+// ---- Complexity Card Renderer ----
+
+function renderComplexityCard(container, complexity) {
+  if (!complexity || !complexity.time) return;
+
+  const card = document.createElement("div");
+  card.className = "complexity-card";
+
+  const header = document.createElement("div");
+  header.className = "complexity-card__header";
+
+  const titleRow = document.createElement("div");
+  titleRow.className = "complexity-card__title";
+  titleRow.innerHTML = `
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>
+    <span>VISUAL TIME & SPACE COMPLEXITY</span>
+  `;
+
+  const safeBadge = document.createElement("span");
+  safeBadge.className = "complexity-card__safe";
+  safeBadge.textContent = complexity.safe_n ? `Safe: ${complexity.safe_n}` : "Contest Safe";
+
+  header.appendChild(titleRow);
+  header.appendChild(safeBadge);
+
+  // Big-O visual graph form (Dark for this algo, light grey for others)
+  const graphHtml = generateBigOGraphSVG(complexity.time, complexity.space);
+
+  const grid = document.createElement("div");
+  grid.className = "complexity-card__grid";
+
+  const timeMetric = document.createElement("div");
+  timeMetric.className = "complexity-metric";
+  timeMetric.innerHTML = `
+    <span class="complexity-metric__label">TIME COMPLEXITY</span>
+    <span class="complexity-metric__value">${complexity.time}</span>
+  `;
+
+  const spaceMetric = document.createElement("div");
+  spaceMetric.className = "complexity-metric";
+  spaceMetric.innerHTML = `
+    <span class="complexity-metric__label">AUXILIARY SPACE</span>
+    <span class="complexity-metric__value">${complexity.space}</span>
+  `;
+
+  grid.appendChild(timeMetric);
+  grid.appendChild(spaceMetric);
+
+  card.appendChild(header);
+  card.insertAdjacentHTML("beforeend", graphHtml);
+  card.appendChild(grid);
+
+  if (complexity.pitfall) {
+    const pitfall = document.createElement("div");
+    pitfall.className = "complexity-card__pitfall";
+    pitfall.innerHTML = `<strong>CP TLE Caution:</strong> ${complexity.pitfall}`;
+    card.appendChild(pitfall);
+  }
+
+  container.appendChild(card);
+}
+
 // ---- Add messages to DOM ----
 
-function addMessage(text, role) {
+function addMessage(text, role, complexity = null) {
   if (welcomeMessage && welcomeMessage.style.display !== "none") {
     welcomeMessage.style.display = "none";
   }
@@ -231,6 +406,11 @@ function addMessage(text, role) {
 
     card.appendChild(meta);
     card.appendChild(content);
+
+    if (complexity) {
+      renderComplexityCard(card, complexity);
+    }
+
     row.appendChild(card);
   }
 
@@ -330,8 +510,12 @@ form.addEventListener("submit", async (e) => {
       }
       addMessage(data.error || "Something went wrong. Please try again.", "error");
     } else {
-      addMessage(data.response, "bot");
-      conversation.push({ role: "assistant", content: data.response });
+      addMessage(data.response, "bot", data.complexity || null);
+      conversation.push({
+        role: "assistant",
+        content: data.response,
+        complexity: data.complexity || null,
+      });
       saveConversation();
     }
   } catch (err) {
