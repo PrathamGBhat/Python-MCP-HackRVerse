@@ -63,9 +63,17 @@ PyRef includes an automated **Big-O Complexity Visualizer** and **Contest TLE Ri
 
 * **Interactive Big-O Graph:** Plots all standard complexity curves ($O(1)$, $O(\log N)$, $O(N)$, $O(N \log N)$, $O(N^2)$, $O(N^3)$, $O(2^N)$, $O(N!)$).
 * **High-Contrast Highlighting:** The active algorithm's curve is rendered in **bold solid dark** with an anchor dot and badge, while all other curves remain in **light grey** for visual contrast.
+* **Contextual Relevance Filter:** Suppresses complexity graphs on greetings (`"hello"`, `"hi"`) or general chit-chat, rendering only when discussing algorithms, data structures, or library methods.
 * **Contest Safety Thresholds:** Displays the exact safe input limit for standard 1.0s contest limits (e.g., $N \le 10^9$ for binary search, $N \le 10^6$ for sorting, $N \le 10^3$ for $O(N^2)$).
 * **CP TLE Caution Box:** Warns contestants about common TLE traps (e.g., using `list.pop(0)` or `bisect.insort` inside loops instead of `collections.deque`).
 * **Table-Free Formatting Sanitizer:** Automatically sanitizes responses to prevent broken Markdown tables with escaped `\n` code literals, presenting all comparisons with clear headings, bullet points, and syntax-highlighted code blocks.
+
+---
+
+## Interactive Mini-Terminal & Typewriter Streaming
+
+* **In-Browser Python Sandbox (Pyodide Wasm):** Run code snippets directly in your browser with zero server compute or security risk. Every code snippet includes a **Run ▶** button alongside the **Copy** button, executing Python code in a sandboxed WebAssembly runtime with captured stdout, stderr, execution duration, and an expandable terminal drawer.
+* **Typewriter Response Streaming:** Conversational token-by-token streaming animation with an electric-blue blinking cursor (`▋`), auto-scroll tracking, and instant skip-on-click for maximum responsiveness.
 
 ---
 

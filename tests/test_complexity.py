@@ -81,6 +81,24 @@ def test_sanitize_tables_with_code():
     assert "arr.sort()" in parsed["text"]
 
 
+def test_greeting_and_chitchat_suppresses_complexity():
+    sample_greeting_reply = (
+        "Hello! I'm PyRef - your quick reference for Python syntax.\n\n"
+        ":::complexity\n"
+        "time: O(1)\n"
+        "space: O(1)\n"
+        "safe_n: N <= 10^9 (trivial operations)\n"
+        "pitfall: None\n"
+        ":::"
+    )
+    # When user says "hello" or "hi", complexity MUST be suppressed to None
+    for greeting in ["hello", "hi", "hey", "hello there", "who are you", "thanks"]:
+        parsed = parse_complexity_payload(sample_greeting_reply, query=greeting)
+        assert parsed["complexity"] is None, f"Expected None for greeting '{greeting}', got {parsed['complexity']}"
+        assert ":::complexity" not in parsed["text"]
+        assert "Hello! I'm PyRef" in parsed["text"]
+
+
 if __name__ == "__main__":
     test_parse_standard_complexity_block()
     test_parse_loose_complexity_block()
@@ -88,5 +106,6 @@ if __name__ == "__main__":
     test_refusal_has_no_complexity()
     test_lookup_registry_keys()
     test_sanitize_tables_with_code()
+    test_greeting_and_chitchat_suppresses_complexity()
     print("All complexity unit tests passed successfully.")
 

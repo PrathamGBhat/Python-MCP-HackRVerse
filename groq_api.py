@@ -36,14 +36,17 @@ DEFAULT_SYSTEM_PROMPT = (
     "Present all comparisons, data structures, and references using clear headings, bullet points, and "
     "standard code blocks with proper line breaks. 2. Refuse to solve specific problems, give their code, "
     "approach or hints, or interpret pasted problem statements. When refusing, offer to explain a relevant "
-    "Python function instead. 3. At the very end of your response, provide a structured complexity block in this "
-    "exact format:\n"
+    "Python function instead. 3. ONLY when explaining a specific Python function, data structure, built-in, "
+    "or algorithm (e.g., sorting, searching, bisect, heapq, dict, deque, list operations, recursion), provide a "
+    "structured complexity block at the very end of your response:\n"
     ":::complexity\n"
     "time: <Big-O time complexity, e.g. O(N log N)>\n"
     "space: <Big-O auxiliary space, e.g. O(N)>\n"
     "safe_n: <Maximum safe N for 1.0s limit, e.g. N <= 10^6>\n"
     "pitfall: <1-2 sentences on CP pitfalls or TLE dangers, or None>\n"
-    ":::"
+    ":::\n"
+    "NEVER provide a complexity block for greetings (hi, hello, hey), general pleasantries, conversational banter, "
+    "questions asking who you are, or non-algorithmic discussions."
 )
 # An empty or missing SYSTEM_PROMPT falls back to a safe default.
 SYSTEM_PROMPT = os.environ.get("SYSTEM_PROMPT") or DEFAULT_SYSTEM_PROMPT
@@ -138,34 +141,78 @@ def sanitize_no_tables(text: str) -> str:
     return "\n".join(new_lines)
 
 
+CHITCHAT_OR_GREETING_PATTERNS = {
+    "hi", "hello", "hey", "heyy", "heyya", "yo", "sup", "howdy",
+    "greetings", "good morning", "good afternoon", "good evening", "good night",
+    "who are you", "what are you", "what can you do", "help", "help me",
+    "thanks", "thank you", "thx", "ty", "bye", "goodbye", "ok", "okay",
+    "cool", "nice", "awesome", "great", "understood", "got it"
+}
+
+
+def is_complexity_relevant(query: str, response_text: str = "") -> bool:
+    """
+    Returns True only if the interaction is genuinely about an algorithm, data structure,
+    syntax operation, or Python function where Big-O complexity makes technical sense.
+    Returns False for greetings, conversational chit-chat, or general pleasantries.
+    """
+    if not query:
+        return True
+
+    q = query.strip().lower()
+    q_clean = re.sub(r"[!?.,'\"`]", "", q).strip()
+
+    if not q_clean or q_clean in CHITCHAT_OR_GREETING_PATTERNS:
+        return False
+
+    # Check for prefix greeting without technical keywords
+    if re.match(r"^(hi|hello|hey|greetings|howdy|yo)\b", q_clean):
+        algorithmic_terms = [
+            "sort", "search", "tree", "graph", "heap", "bisect", "dict", "list",
+            "deque", "set", "cache", "math", "complexity", "big o", "recursion",
+            "function", "method", "array", "string", "loop", "counter", "defaultdict"
+        ]
+        if not any(term in q_clean for term in algorithmic_terms):
+            return False
+
+    # If the response itself is purely a greeting or introductory self-presentation
+    if response_text and response_text.strip().startswith("Hello! I'm PyRef") and ":::complexity" in response_text:
+        if len(q_clean.split()) <= 2 and not any(c in q_clean for c in ["sort", "heap", "bisect", "dict", "list", "pop", "time", "space", "o("]):
+            return False
+
+    return True
+
+
 def parse_complexity_payload(response_text: str, query: str = "") -> Dict[str, Any]:
     """
     Extracts the :::complexity block from response_text.
     Returns {"text": clean_markdown, "complexity": dict_or_none}.
-    If LLM omitted the block, falls back to deterministic lookup_complexity(query).
+    If query is a greeting or conversational pleasantry, strips any complexity block and returns None.
+    If LLM omitted the block, falls back to deterministic lookup_complexity(query) if relevant.
     """
     if not response_text or response_text == REFUSAL:
         return {"text": response_text, "complexity": None}
 
+    # Extract block if present
     match = COMPLEXITY_PATTERN.search(response_text)
+    loose_match = LOOSE_COMPLEXITY_PATTERN.search(response_text) if not match else None
+
+    clean_text = response_text
+    raw_comp_dict: Optional[Dict[str, Any]] = None
+
     if match:
         data = match.groupdict()
         clean_text = COMPLEXITY_PATTERN.sub("", response_text).strip()
         pitfall_val = data["pitfall"].strip()
         if pitfall_val.lower() in ("none", "n/a", "no pitfall", "null"):
             pitfall_val = None
-        return {
-            "text": sanitize_no_tables(clean_text),
-            "complexity": {
-                "time": data["time"].strip(),
-                "space": data["space"].strip(),
-                "safe_n": data["safe_n"].strip(),
-                "pitfall": pitfall_val,
-            }
+        raw_comp_dict = {
+            "time": data["time"].strip(),
+            "space": data["space"].strip(),
+            "safe_n": data["safe_n"].strip(),
+            "pitfall": pitfall_val,
         }
-
-    loose_match = LOOSE_COMPLEXITY_PATTERN.search(response_text)
-    if loose_match:
+    elif loose_match:
         block_content = loose_match.group(1)
         clean_text = LOOSE_COMPLEXITY_PATTERN.sub("", response_text).strip()
         comp_dict = {}
@@ -178,25 +225,36 @@ def parse_complexity_payload(response_text: str, query: str = "") -> Dict[str, A
             pitfall_val = comp_dict.get("pitfall")
             if pitfall_val and pitfall_val.lower() in ("none", "n/a", "no pitfall", "null"):
                 pitfall_val = None
-            return {
-                "text": sanitize_no_tables(clean_text),
-                "complexity": {
-                    "time": comp_dict.get("time", "O(1)"),
-                    "space": comp_dict.get("space", "O(1)"),
-                    "safe_n": comp_dict.get("safe_n", "N <= 10^6"),
-                    "pitfall": pitfall_val,
-                }
+            raw_comp_dict = {
+                "time": comp_dict.get("time", "O(1)"),
+                "space": comp_dict.get("space", "O(1)"),
+                "safe_n": comp_dict.get("safe_n", "N <= 10^6"),
+                "pitfall": pitfall_val,
             }
 
-    # Deterministic fallback based on query keywords
-    fallback = lookup_complexity(query)
-    if fallback:
+    # If the user query is a greeting or casual chit-chat, complexity is NOT relevant
+    if query and not is_complexity_relevant(query, response_text):
+        return {"text": sanitize_no_tables(clean_text), "complexity": None}
+
+    if raw_comp_dict:
+        t_val = raw_comp_dict.get("time", "").lower()
+        if t_val in ("none", "n/a", "not applicable", "null", "-", "trivial"):
+            return {"text": sanitize_no_tables(clean_text), "complexity": None}
         return {
-            "text": sanitize_no_tables(response_text.strip()),
-            "complexity": fallback,
+            "text": sanitize_no_tables(clean_text),
+            "complexity": raw_comp_dict,
         }
 
-    return {"text": sanitize_no_tables(response_text.strip()), "complexity": None}
+    # Deterministic fallback based on query keywords only if relevant
+    if query and is_complexity_relevant(query, response_text):
+        fallback = lookup_complexity(query)
+        if fallback:
+            return {
+                "text": sanitize_no_tables(clean_text),
+                "complexity": fallback,
+            }
+
+    return {"text": sanitize_no_tables(clean_text), "complexity": None}
 
 QUESTION_GUARD = (
     "You filter requests for a Python reference tool. Answer with ONE word: BLOCK or ALLOW.\n"

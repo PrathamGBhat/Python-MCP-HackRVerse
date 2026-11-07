@@ -432,6 +432,71 @@ textarea {
   margin-left: auto;
 }
 
+/* ---- Typewriter Animation Styles ---- */
+
+.typewriter-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  background-color: var(--electric-blue-light);
+  margin-left: 3px;
+  vertical-align: -2px;
+  border-radius: 1px;
+  animation: typewriter-blink 0.65s infinite ease-in-out;
+}
+
+@keyframes typewriter-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.typewriter-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--electric-blue-light);
+  background: var(--electric-blue-dim);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  margin-left: 4px;
+  animation: pulse-stream 1.5s infinite;
+}
+
+@keyframes pulse-stream {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.typewriter-skip-hint {
+  font-size: 9.5px;
+  color: var(--cool-white-dim);
+  font-family: var(--font-mono);
+  margin-left: auto;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
+.bot-card.is-typing {
+  cursor: pointer;
+}
+
+.bot-card.is-typing:hover .typewriter-skip-hint {
+  opacity: 1;
+  color: var(--electric-blue-light);
+}
+
+.complexity-card.fade-in {
+  animation: cardFadeIn 0.35s ease-out forwards;
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .bot-card__content {
   font-size: 14px;
   line-height: 1.7;
@@ -495,6 +560,50 @@ textarea {
   color: var(--electric-blue-light);
 }
 
+.code-wrapper__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-wrapper__btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--cool-white-muted);
+  border: 1px solid var(--cool-white-border);
+  background: rgba(248, 250, 252, 0.04);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.code-wrapper__btn:hover:not(:disabled) {
+  background: var(--electric-blue-dim);
+  border-color: rgba(37, 99, 235, 0.4);
+  color: var(--cool-white);
+}
+
+.code-wrapper__run {
+  color: #34D399;
+  border-color: rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.code-wrapper__run:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #6EE7B7;
+}
+
+.code-wrapper__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .code-wrapper__copy {
   display: flex;
   align-items: center;
@@ -511,6 +620,89 @@ textarea {
   background: var(--electric-blue-dim);
   border-color: rgba(37, 99, 235, 0.4);
   color: var(--cool-white);
+}
+
+/* Mini-Terminal Console Drawer */
+.mini-terminal {
+  border-top: 1px solid rgba(248, 250, 252, 0.1);
+  background: #070B14;
+  font-family: var(--font-mono);
+}
+
+.mini-terminal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 12px;
+  background: #0B1120;
+  border-bottom: 1px solid rgba(248, 250, 252, 0.06);
+  font-size: 10px;
+}
+
+.mini-terminal__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--cool-white-dim);
+}
+
+.terminal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 6px #10B981;
+}
+
+.mini-terminal__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-terminal__time {
+  color: #64748B;
+  font-size: 9.5px;
+}
+
+.mini-terminal__close {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: inherit;
+  padding: 1px 4px;
+}
+
+.mini-terminal__close:hover {
+  color: var(--cool-white);
+}
+
+.mini-terminal__body {
+  margin: 0;
+  padding: 10px 14px !important;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background: transparent !important;
+}
+
+.mini-terminal__body code.output-success {
+  color: #E2E8F0;
+}
+
+.mini-terminal__body code.output-error {
+  color: #F87171;
+}
+
+.mini-terminal__body code.output-running {
+  color: #60A5FA;
+  font-style: italic;
 }
 
 .bot-card__content pre {
