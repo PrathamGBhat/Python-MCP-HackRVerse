@@ -7,7 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY main.py groq_api.py fetch_mcp.py guardrails.py complexity_data.py ./
+COPY main.py groq_api.py fetch_mcp.py guardrails.py complexity_data.py cp_auditor.py ./
 COPY static/ ./static/
 
 # Run as non-root user

@@ -8,6 +8,7 @@ const sendBtn = document.getElementById("sendBtn");
 const transcript = document.getElementById("transcript");
 const status = document.getElementById("status");
 const clearBtn = document.getElementById("clearBtn");
+const exportBtn = document.getElementById("exportBtn");
 const charCounter = document.getElementById("charCounter");
 const welcomeMessage = document.getElementById("welcomeMessage");
 
@@ -107,6 +108,56 @@ input.addEventListener("keydown", (e) => {
     form.requestSubmit();
   }
 });
+
+// ---- Export Chat as Markdown ----
+
+if (exportBtn) {
+  exportBtn.addEventListener("click", () => {
+    if (!conversation || conversation.length === 0) {
+      alert("No conversation history to export yet. Ask PyRef some questions first!");
+      return;
+    }
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const timeStr = new Date().toLocaleTimeString();
+
+    let md = `# PyRef Reference Notes\n`;
+    md += `*Exported on ${dateStr} at ${timeStr} · Python 3.12 Reference Assistant*\n\n`;
+    md += `---\n\n`;
+
+    let qCount = 0;
+    for (let i = 0; i < conversation.length; i++) {
+      const msg = conversation[i];
+      if (msg.role === "user") {
+        qCount++;
+        md += `### ${qCount}. Query: ${msg.content.trim()}\n\n`;
+      } else if (msg.role === "assistant") {
+        md += `${msg.content.trim()}\n\n`;
+        if (msg.complexity && msg.complexity.time) {
+          md += `> **Time Complexity:** \`${msg.complexity.time}\` | **Aux Space:** \`${msg.complexity.space || 'O(1)'}\`\n`;
+          if (msg.complexity.safe_n) {
+            md += `> **Safe Input Limit:** ${msg.complexity.safe_n}\n`;
+          }
+          if (msg.complexity.pitfall) {
+            md += `> **CP TLE Caution:** ${msg.complexity.pitfall}\n`;
+          }
+          md += `\n`;
+        }
+        md += `---\n\n`;
+      }
+    }
+
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `PyRef-Notes-${dateStr}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
 
 // ---- Clear chat ----
 
@@ -886,6 +937,172 @@ document.addEventListener("keydown", (e) => {
 pinsClearAll?.addEventListener("click", () => {
   if (confirm("Remove all pinned answers?")) clearAllPins();
 });
+
+// ---- CP Code Auditor UI & Logic ----
+
+const auditToggleBtn = document.getElementById("auditToggleBtn");
+const auditModal     = document.getElementById("auditModal");
+const auditOverlay   = document.getElementById("auditOverlay");
+const auditClose     = document.getElementById("auditClose");
+const runAuditBtn    = document.getElementById("runAuditBtn");
+const loadSampleBtn  = document.getElementById("loadSampleBtn");
+const auditCodeInput = document.getElementById("auditCodeInput");
+const auditResults   = document.getElementById("auditResults");
+const auditGradeBadge= document.getElementById("auditGradeBadge");
+const auditFindingsList = document.getElementById("auditFindingsList");
+
+function openAuditModal() {
+  closeSidebar();
+  auditModal?.classList.add("is-open");
+  auditOverlay?.classList.add("is-visible");
+  auditCodeInput?.focus();
+}
+
+function closeAuditModal() {
+  auditModal?.classList.remove("is-open");
+  auditOverlay?.classList.remove("is-visible");
+}
+
+auditToggleBtn?.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  auditModal?.classList.contains("is-open") ? closeAuditModal() : openAuditModal();
+});
+
+auditClose?.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  closeAuditModal();
+});
+
+auditOverlay?.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  closeAuditModal();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && auditModal?.classList.contains("is-open")) {
+    closeAuditModal();
+  }
+});
+
+loadSampleBtn?.addEventListener("click", () => {
+  if (auditCodeInput) {
+    auditCodeInput.value = `# Common TLE traps in Competitive Programming
+import sys
+
+# 1. Unbuffered input inside loop
+n = int(input())
+arr = []
+
+# 2. Inefficient O(N) operations in loop
+for i in range(n):
+    line = input()
+    arr.append(int(line))
+    arr.pop(0)  # O(N) shift per pop -> O(N^2) TLE!
+
+# 3. Repeated linear search
+for x in range(n):
+    if x in arr:  # O(N) membership check -> O(N^2)
+        pass
+
+# 4. Recursion without boosting limit
+def dfs(node, visited):
+    for neighbor in graph[node]:
+        dfs(neighbor, visited)
+`;
+    runAuditCheck();
+  }
+});
+
+async function runAuditCheck() {
+  const code = (auditCodeInput?.value || "").trim();
+  if (!code) {
+    alert("Please enter or paste a Python code snippet to audit.");
+    return;
+  }
+
+  if (runAuditBtn) {
+    runAuditBtn.disabled = true;
+    runAuditBtn.innerHTML = `<span>⚡ Auditing AST...</span>`;
+  }
+
+  try {
+    const res = await fetch("/audit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Failed to audit snippet.");
+      return;
+    }
+
+    renderAuditResults(data);
+  } catch (err) {
+    alert("Could not reach audit service. Ensure server is active.");
+  } finally {
+    if (runAuditBtn) {
+      runAuditBtn.disabled = false;
+      runAuditBtn.innerHTML = `<span>⚡ Run CP Lint Check</span>`;
+    }
+  }
+}
+
+function renderAuditResults(data) {
+  if (!auditResults || !auditGradeBadge || !auditFindingsList) return;
+
+  auditResults.style.display = "block";
+  auditGradeBadge.textContent = data.grade;
+  auditGradeBadge.className = `grade-badge grade-badge--${data.badge_color || 'info'}`;
+
+  auditFindingsList.innerHTML = "";
+
+  if (!data.valid) {
+    auditFindingsList.innerHTML = `
+      <div class="audit-item audit-item--danger">
+        <div class="audit-item__title">Syntax Analysis Error</div>
+        <div class="audit-item__desc">${data.error}</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (data.findings_count === 0) {
+    auditFindingsList.innerHTML = `
+      <div class="audit-item audit-item--success">
+        <div class="audit-item__title">✓ No TLE Traps or Suboptimal Idioms Detected!</div>
+        <div class="audit-item__desc">Your snippet follows optimal CP patterns. Memory operations and loop complexities appear within 1.0s contest limits.</div>
+      </div>
+    `;
+    return;
+  }
+
+  data.findings.forEach(f => {
+    const item = document.createElement("div");
+    const sevClass = f.severity === "CRITICAL" ? "danger" : f.severity === "HIGH" ? "warning" : "caution";
+    item.className = `audit-item audit-item--${sevClass}`;
+
+    item.innerHTML = `
+      <div class="audit-item__header">
+        <span class="audit-badge audit-badge--${sevClass}">${f.severity}</span>
+        <span class="audit-item__title">${f.title} (Line ${f.line})</span>
+      </div>
+      <div class="audit-item__desc">${f.message}</div>
+      <div class="audit-item__fix">
+        <strong>CP Solution:</strong> <code>${f.fix}</code>
+      </div>
+    `;
+
+    auditFindingsList.appendChild(item);
+  });
+}
+
+runAuditBtn?.addEventListener("click", runAuditCheck);
 
 // ---- Initialize ----
 

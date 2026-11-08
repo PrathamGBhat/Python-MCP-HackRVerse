@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=7.4.0" />
+<link rel="stylesheet" href="style.css?v=7.7.0" />
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
@@ -41,11 +41,25 @@
         <span class="status-pulse"></span>
         <span class="status-text">CONTEST GUARDRAILS ACTIVE</span>
       </div>
+      <button class="action-btn" id="auditToggleBtn" title="Audit Python Snippet for TLE & CP Traps">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+        </svg>
+        <span>Audit Code</span>
+      </button>
       <button class="action-btn" id="pinsToggleBtn" title="View pinned answers">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
           <path d="M17 4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v1H5v2h1v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7h1V5h-2V4z"/>
         </svg>
         <span id="pinsBtnLabel">Pins</span>
+      </button>
+      <button class="action-btn" id="exportBtn" title="Export session notes as Markdown">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Export</span>
       </button>
       <button class="action-btn" id="clearBtn" title="Clear conversation history">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -90,6 +104,49 @@
     </div>
 
   </main>
+
+  <!-- Code Auditor Modal / Drawer -->
+  <div class="audit-overlay" id="auditOverlay" aria-hidden="true"></div>
+  <aside class="audit-modal" id="auditModal" aria-label="CP Snippet Auditor">
+    <div class="audit-modal__header">
+      <div class="audit-modal__title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+        </svg>
+        <span>CP TLE & IDIOM LINTER</span>
+      </div>
+      <button class="audit-modal__close" id="auditClose" type="button" aria-label="Close code auditor" title="Close">✕</button>
+    </div>
+    <div class="audit-modal__body">
+      <p class="audit-hint">
+        Paste your loop, I/O routine, or helper snippet (up to 15,000 chars). Statically checks for <strong>O(N²) TLE traps</strong>, memory leaks, and recursion depth limits.
+      </p>
+      <div class="audit-input-wrap">
+        <textarea id="auditCodeInput" rows="7" placeholder="# Paste your Python loop or snippet here...
+from collections import deque
+for i in range(n):
+    # test your code
+    pass" spellcheck="false"></textarea>
+      </div>
+      <div class="audit-actions">
+        <button type="button" class="audit-submit-btn" id="runAuditBtn">
+          <span>⚡ Run CP Lint Check</span>
+        </button>
+        <button type="button" class="audit-sample-btn" id="loadSampleBtn">
+          <span>Load TLE Trap Sample</span>
+        </button>
+      </div>
+
+      <!-- Audit Results Viewport -->
+      <div class="audit-results" id="auditResults" style="display: none;">
+        <div class="audit-grade-banner" id="auditGradeBanner">
+          <span class="grade-label">RATING:</span>
+          <span class="grade-badge" id="auditGradeBadge">ANALYZING...</span>
+        </div>
+        <div class="audit-findings-list" id="auditFindingsList"></div>
+      </div>
+    </div>
+  </aside>
 
   <!-- Pins Sidebar Overlay -->
   <div class="pins-overlay" id="pinsOverlay" aria-hidden="true"></div>
@@ -152,6 +209,6 @@
 
 </div>
 
-<script src="script.js?v=7.4.0"></script>
+<script src="script.js?v=7.7.0"></script>
 </body>
 </html>

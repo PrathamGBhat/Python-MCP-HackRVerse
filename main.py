@@ -15,6 +15,7 @@ from slowapi.util import get_remote_address
 import groq_api
 from fetch_mcp import FetchMCP
 from guardrails import REFUSAL
+from cp_auditor import audit_python_code
 
 logging.basicConfig(
     level=logging.INFO,
@@ -64,6 +65,10 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = Field(
         default=None, max_length=64, pattern=r"^[A-Za-z0-9_-]+$"
     )
+
+
+class AuditRequest(BaseModel):
+    code: str = Field(..., max_length=15000)
 
 
 # SESSIONS
@@ -146,6 +151,21 @@ async def chat(request: Request, response: Response, chat_request: ChatRequest):
         return JSONResponse(
             status_code=500,
             content={"error": "An unexpected error occurred. Please try again."},
+        )
+
+
+# CP Code Auditor Endpoint
+@app.post("/audit")
+@limiter.limit("20/minute")
+async def audit_code(request: Request, response: Response, audit_req: AuditRequest):
+    try:
+        results = audit_python_code(audit_req.code)
+        return results
+    except Exception as exc:
+        logger.error("[/audit] unexpected error: %s", exc)
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to audit snippet: {str(exc)}"},
         )
 
 
