@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=7.3.0" />
+<link rel="stylesheet" href="style.css?v=7.4.0" />
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
@@ -41,6 +41,12 @@
         <span class="status-pulse"></span>
         <span class="status-text">CONTEST GUARDRAILS ACTIVE</span>
       </div>
+      <button class="action-btn" id="pinsToggleBtn" title="View pinned answers">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17 4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v1H5v2h1v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7h1V5h-2V4z"/>
+        </svg>
+        <span id="pinsBtnLabel">Pins</span>
+      </button>
       <button class="action-btn" id="clearBtn" title="Clear conversation history">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"></polyline>
@@ -85,6 +91,28 @@
 
   </main>
 
+  <!-- Pins Sidebar Overlay -->
+  <div class="pins-overlay" id="pinsOverlay" aria-hidden="true"></div>
+
+  <!-- Pins Sidebar Panel -->
+  <aside class="pins-sidebar" id="pinsSidebar" aria-label="Pinned answers">
+    <div class="pins-sidebar__header">
+      <div class="pins-sidebar__title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17 4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v1H5v2h1v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7h1V5h-2V4zM9 4h6v1H9V4zm7 3v10H8V7h8z"/>
+        </svg>
+        <span>PINNED REFERENCE</span>
+      </div>
+      <button class="pins-sidebar__close" id="pinsClose" type="button" aria-label="Close pinned reference" title="Close">✕</button>
+    </div>
+    <div class="pins-sidebar__list" id="pinsList">
+      <!-- Pinned items rendered here by JS -->
+    </div>
+    <div class="pins-sidebar__footer">
+      <button class="pins-clear-all" id="pinsClearAll">Clear All Pins</button>
+    </div>
+  </aside>
+
   <!-- Live Status Bar -->
   <div class="status-bar" id="status"></div>
 
@@ -124,6 +152,6 @@
 
 </div>
 
-<script src="script.js?v=7.3.0"></script>
+<script src="script.js?v=7.4.0"></script>
 </body>
 </html>

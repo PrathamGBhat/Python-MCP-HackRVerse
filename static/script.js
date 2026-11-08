@@ -15,6 +15,22 @@ const welcomeMessage = document.getElementById("welcomeMessage");
 
 const HISTORY_KEY = "pyref-cp-conversation";
 const SESSION_KEY = "pyref-session-id";
+const PINS_KEY = "pyref-pins";
+
+function loadPins() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PINS_KEY) || "[]");
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePins(pinsData) {
+  localStorage.setItem(PINS_KEY, JSON.stringify(pinsData));
+}
+
+let pins = loadPins();
 
 function newSessionId() {
   return (window.crypto && crypto.randomUUID)
@@ -564,6 +580,36 @@ function addMessage(text, role, complexity = null, animate = false) {
       <span class="meta-time">${timeStr}</span>
     `;
 
+    // Pin button on bot message
+    const pinBtn = document.createElement("button");
+    pinBtn.className = "pin-btn";
+    pinBtn.type = "button";
+    pinBtn.title = "Pin this answer";
+    pinBtn.innerHTML = `
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17 4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v1H5v2h1v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7h1V5h-2V4z"/>
+      </svg>
+      <span>Pin</span>
+    `;
+
+    // Check if this specific response or question is already pinned
+    const questionText = conversation.length > 0
+      ? (conversation.slice().reverse().find(m => m.role === "user")?.content || "")
+      : "";
+
+    if (pins.some(p => p.answer === text)) {
+      pinBtn.querySelector("span").textContent = "Pinned ✓";
+      pinBtn.disabled = true;
+    }
+
+    pinBtn.addEventListener("click", () => {
+      addPin(questionText, text, complexity);
+      pinBtn.querySelector("span").textContent = "Pinned ✓";
+      pinBtn.disabled = true;
+    });
+
+    meta.appendChild(pinBtn);
+
     const content = document.createElement("div");
     content.className = "bot-card__content";
 
@@ -707,10 +753,145 @@ function startCooldown(seconds = DEFAULT_COOLDOWN_SECONDS) {
   updateCooldown();
 }
 
+// ---- Pins Management & UI ----
+
+const pinsToggleBtn = document.getElementById("pinsToggleBtn");
+const pinsSidebar   = document.getElementById("pinsSidebar");
+const pinsOverlay   = document.getElementById("pinsOverlay");
+const pinsClose     = document.getElementById("pinsClose");
+const pinsClearAll  = document.getElementById("pinsClearAll");
+
+function updatePinsButton() {
+  const label = document.getElementById("pinsBtnLabel");
+  if (label) {
+    label.textContent = pins.length > 0 ? `Pins (${pins.length})` : "Pins";
+  }
+}
+
+function addPin(question, answer, complexity) {
+  const alreadyPinned = pins.some(p => p.answer === answer);
+  if (alreadyPinned) return;
+
+  const pin = {
+    id: Date.now().toString(),
+    question: (question || "Python Reference Snippet").slice(0, 200),
+    answer: answer,
+    complexity: complexity || null,
+    pinnedAt: new Date().toISOString(),
+  };
+
+  pins.unshift(pin);
+  savePins(pins);
+  updatePinsButton();
+  renderPinsSidebar();
+}
+
+function removePin(id) {
+  pins = pins.filter(p => p.id !== id);
+  savePins(pins);
+  updatePinsButton();
+  renderPinsSidebar();
+}
+
+function clearAllPins() {
+  pins = [];
+  savePins(pins);
+  updatePinsButton();
+  renderPinsSidebar();
+}
+
+function renderPinsSidebar() {
+  const list = document.getElementById("pinsList");
+  if (!list) return;
+
+  if (pins.length === 0) {
+    list.innerHTML = `
+      <div class="pins-empty">
+        <p>No pins yet.</p>
+        <p>Click <strong>Pin</strong> on any PyRef answer to save it here.</p>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = "";
+
+  pins.forEach(pin => {
+    const item = document.createElement("div");
+    item.className = "pin-item";
+
+    const header = document.createElement("div");
+    header.className = "pin-item__header";
+
+    const q = document.createElement("div");
+    q.className = "pin-item__question";
+    q.textContent = pin.question || "Pinned answer";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "pin-item__remove";
+    removeBtn.textContent = "✕";
+    removeBtn.title = "Remove pin";
+    removeBtn.type = "button";
+    removeBtn.addEventListener("click", () => removePin(pin.id));
+
+    header.appendChild(q);
+    header.appendChild(removeBtn);
+
+    const body = document.createElement("div");
+    body.className = "pin-item__answer";
+    body.innerHTML = renderFormattedContent(pin.answer);
+    enhanceCodeBlocks(body);
+
+    item.appendChild(header);
+    item.appendChild(body);
+    list.appendChild(item);
+  });
+}
+
+function openSidebar() {
+  pinsSidebar?.classList.add("is-open");
+  pinsOverlay?.classList.add("is-visible");
+  renderPinsSidebar();
+}
+
+function closeSidebar() {
+  pinsSidebar?.classList.remove("is-open");
+  pinsOverlay?.classList.remove("is-visible");
+}
+
+pinsToggleBtn?.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  pinsSidebar?.classList.contains("is-open") ? closeSidebar() : openSidebar();
+});
+
+pinsClose?.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  closeSidebar();
+});
+
+pinsOverlay?.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  closeSidebar();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && pinsSidebar?.classList.contains("is-open")) {
+    closeSidebar();
+  }
+});
+
+pinsClearAll?.addEventListener("click", () => {
+  if (confirm("Remove all pinned answers?")) clearAllPins();
+});
+
 // ---- Initialize ----
 
 restoreConversation();
 updateCharCounter();
+updatePinsButton();
 
 // ---- Form Submit Handler ----
 
